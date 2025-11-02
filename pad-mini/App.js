@@ -5,6 +5,20 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// Suppress known GiftedChat ref warnings (library issue, doesn't affect functionality)
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  const message = args[0];
+  if (typeof message === 'string') {
+    // Suppress ref-related warnings from GiftedChat library
+    if (message.includes('`ref` is not a prop') || 
+        message.includes('Function components cannot be given refs')) {
+      return; // Suppress these specific warnings
+    }
+  }
+  originalWarn.apply(console, args);
+};
+
 // Import context
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 
@@ -12,7 +26,6 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import { OTPRegisterScreen } from './src/screens/OTPRegisterScreen';
-import VerificationScreen from './src/screens/VerificationScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import RequestHelpScreen from './src/screens/RequestHelpScreen';
 import HelpResponseScreen from './src/screens/HelpResponseScreen';
@@ -70,34 +83,7 @@ function AppNavigator() {
     );
   }
 
-  // If user is authenticated but not verified, show verification
-  if (user && !isVerified) {
-    return (
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.colors.primary,
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      >
-        <Stack.Screen 
-          name="Verification" 
-          component={VerificationScreen}
-          options={{ 
-            title: 'Face Verification',
-            headerLeft: null,
-            gestureEnabled: false
-          }}
-        />
-      </Stack.Navigator>
-    );
-  }
-
-  // If user is authenticated and verified, show main app
+  // If user is authenticated, show main app
   return (
     <Stack.Navigator
       initialRouteName="Home"
